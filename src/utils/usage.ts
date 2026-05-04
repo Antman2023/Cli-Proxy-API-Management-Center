@@ -119,6 +119,11 @@ export interface UsageStatsSnapshot {
   tokens_by_hour: Record<string, number>;
 }
 
+export interface UsageApiKeyFilterOption {
+  value: string;
+  label: string;
+}
+
 export interface UsageQueryRange {
   start?: string;
   end?: string;
@@ -159,6 +164,7 @@ export type UsageTimeRange = 'today' | 'yesterday' | '24h' | '7d' | '30d' | 'all
 const TOKENS_PER_PRICE_UNIT = 1_000_000;
 const MODEL_PRICE_STORAGE_KEY = 'cli-proxy-model-prices-v2';
 const USAGE_ENDPOINT_METHOD_REGEX = /^(GET|POST|PUT|PATCH|DELETE|OPTIONS|HEAD)\s+(\S+)/i;
+const USAGE_API_KEY_FILTER_PREFIX = 'api-key:';
 const USAGE_TIME_RANGE_MS: Record<Exclude<UsageTimeRange, 'today' | 'yesterday' | 'all'>, number> = {
   '24h': 24 * 60 * 60 * 1000,
   '7d': 7 * 24 * 60 * 60 * 1000,
@@ -584,6 +590,150 @@ export function filterUsageByTimeRange<T>(
     ...usageRecord,
     ...toUsageSummaryFields(totalSummary),
     apis: filteredApis,
+  } as T;
+}
+
+export const encodeUsageApiKeyFilterValue = (apiKey: string): string =>
+  `${USAGE_API_KEY_FILTER_PREFIX}${apiKey}`;
+
+const decodeUsageApiKeyFilterValue = (value: string): string =>
+  value.startsWith(USAGE_API_KEY_FILTER_PREFIX)
+    ? value.slice(USAGE_API_KEY_FILTER_PREFIX.length)
+    : value;
+
+export function getUsageApiKeyFilterOptions(usageData: unknown): UsageApiKeyFilterOption[] {
+  const apis = getApisRecord(usageData);
+  if (!apis) {
+    return [];
+  }
+
+  return Object.keys(apis)
+    .filter((apiKey) => apiKey.trim())
+    .map((apiKey) => ({
+      value: encodeUsageApiKeyFilterValue(apiKey),
+      label: maskUsageSensitiveValue(apiKey) || apiKey,
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label));
+}
+
+export function filterUsageByApiKey<T>(
+  usageData: T,
+  apiKeyFilter: string,
+  allFilterValue: string = '__all__'
+): T {
+  if (!apiKeyFilter || apiKeyFilter === allFilterValue) {
+    return usageData;
+  }
+
+  const usageRecord = isRecord(usageData) ? usageData : null;
+  const apis = getApisRecord(usageData);
+  if (!usageRecord || !apis) {
+    return usageData;
+  }
+
+  const apiKey = decodeUsageApiKeyFilterValue(apiKeyFilter);
+  if (!Object.prototype.hasOwnProperty.call(apis, apiKey)) {
+    return usageData;
+  }
+
+  const apiEntry = apis[apiKey];
+  if (!isRecord(apiEntry)) {
+    return usageData;
+  }
+
+  const models = isRecord(apiEntry.models) ? apiEntry.models : null;
+  if (!models) {
+    return {
+      ...usageRecord,
+      ...toUsageSummaryFields(createUsageSummary()),
+      apis: {},
+      requests_by_day: {},
+      requests_by_hour: {},
+      tokens_by_day: {},
+      tokens_by_hour: {},
+    } as T;
+  }
+
+  const filteredModels: Record<string, unknown> = {};
+  const apiSummary = createUsageSummary();
+  const requestsByDay: Record<string, number> = {};
+  const requestsByHour: Record<string, number> = {};
+  const tokensByDay: Record<string, number> = {};
+  const tokensByHour: Record<string, number> = {};
+
+  Object.entries(models).forEach(([modelName, modelEntry]) => {
+    if (!isRecord(modelEntry)) {
+      return;
+    }
+
+    const details = Array.isArray(modelEntry.details) ? modelEntry.details : [];
+    if (!details.length) {
+      return;
+    }
+
+    const modelSummary = createUsageSummary();
+    const filteredDetails: unknown[] = [];
+
+    details.forEach((detail) => {
+      const detailRecord = isRecord(detail) ? detail : null;
+      if (!detailRecord) {
+        return;
+      }
+
+      filteredDetails.push(detail);
+      const totalTokens = extractTotalTokens(detailRecord);
+
+      modelSummary.totalRequests += 1;
+      if (detailRecord?.failed === true) {
+        modelSummary.failureCount += 1;
+      } else {
+        modelSummary.successCount += 1;
+      }
+      modelSummary.totalTokens += totalTokens;
+
+      const timestamp =
+        typeof detailRecord?.timestamp === 'string' ? parseTimestampMs(detailRecord.timestamp) : Number.NaN;
+      if (!Number.isNaN(timestamp) && timestamp > 0) {
+        const date = new Date(timestamp);
+        const dayKey = date.toISOString().slice(0, 10);
+        const hourKey = date.getUTCHours().toString().padStart(2, '0');
+        requestsByDay[dayKey] = (requestsByDay[dayKey] ?? 0) + 1;
+        requestsByHour[hourKey] = (requestsByHour[hourKey] ?? 0) + 1;
+        tokensByDay[dayKey] = (tokensByDay[dayKey] ?? 0) + totalTokens;
+        tokensByHour[hourKey] = (tokensByHour[hourKey] ?? 0) + totalTokens;
+      }
+    });
+
+    if (!filteredDetails.length) {
+      return;
+    }
+
+    filteredModels[modelName] = {
+      ...modelEntry,
+      ...toUsageSummaryFields(modelSummary),
+      details: filteredDetails,
+    };
+
+    apiSummary.totalRequests += modelSummary.totalRequests;
+    apiSummary.successCount += modelSummary.successCount;
+    apiSummary.failureCount += modelSummary.failureCount;
+    apiSummary.totalTokens += modelSummary.totalTokens;
+  });
+
+  return {
+    ...usageRecord,
+    ...toUsageSummaryFields(apiSummary),
+    apis: {
+      [apiKey]: {
+        ...apiEntry,
+        ...toUsageSummaryFields(apiSummary),
+        models: filteredModels,
+      },
+    },
+    requests_by_day: requestsByDay,
+    requests_by_hour: requestsByHour,
+    tokens_by_day: tokensByDay,
+    tokens_by_hour: tokensByHour,
   } as T;
 }
 

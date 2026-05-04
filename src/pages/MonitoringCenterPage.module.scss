@@ -45,6 +45,24 @@
   flex-wrap: wrap;
 }
 
+.headerFilterItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 180px;
+}
+
+.headerFilterLabel {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.apiKeySelect {
+  min-width: 180px;
+  max-width: 240px;
+}
+
 .errorBox {
   padding: 10px;
   background-color: rgba($error-color, 0.1);
@@ -704,6 +722,12 @@
 
   .timeRangeButtons {
     width: 100%;
+  }
+
+  .headerFilterItem,
+  .apiKeySelect {
+    width: 100%;
+    max-width: none;
   }
 
   .timeRangeButtons :global(.btn.btn-sm) {

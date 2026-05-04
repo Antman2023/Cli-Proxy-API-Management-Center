@@ -19,6 +19,7 @@ import {
 } from 'chart.js';
 import { Button } from '@/components/ui/Button';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { Select } from '@/components/ui/Select';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useHeaderRefresh } from '@/hooks/useHeaderRefresh';
 import { useConfigStore, useThemeStore } from '@/stores';
@@ -35,7 +36,9 @@ import { MonitorStatCards } from '@/components/monitor/MonitorStatCards';
 import { MonitorTrendChart } from '@/components/monitor/MonitorTrendChart';
 import { ModelUsageDistributionCard } from '@/components/monitor/ModelUsageDistributionCard';
 import {
+  filterUsageByApiKey,
   filterUsageByTimeRange,
+  getUsageApiKeyFilterOptions,
   getModelNamesFromUsage,
   getModelStats,
   type UsageTimeRange
@@ -67,6 +70,7 @@ ChartJS.register(
 );
 
 const TIME_RANGE_STORAGE_KEY = 'cli-proxy-monitor-time-range-v1';
+const ALL_FILTER = '__all__';
 
 const loadTimeRange = (): UsageTimeRange => {
   try {
@@ -87,6 +91,7 @@ export function MonitoringCenterPage() {
   const isDark = resolvedTheme === 'dark';
   const config = useConfigStore((state) => state.config);
   const [timeRange, setTimeRange] = useState<UsageTimeRange>(loadTimeRange);
+  const [apiKeyFilter, setApiKeyFilter] = useState(ALL_FILTER);
 
   const {
     usage,
@@ -130,9 +135,28 @@ export function MonitoringCenterPage() {
     }
   }, [timeRange]);
 
-  const filteredUsage = useMemo(
+  const timeFilteredUsage = useMemo(
     () => (usage ? filterUsageByTimeRange(usage, timeRange) : null),
     [usage, timeRange]
+  );
+  const apiKeyOptions = useMemo(
+    () => [
+      { value: ALL_FILTER, label: t('usage_stats.filter_all') },
+      ...getUsageApiKeyFilterOptions(timeFilteredUsage),
+    ],
+    [t, timeFilteredUsage]
+  );
+  const apiKeyOptionSet = useMemo(
+    () => new Set(apiKeyOptions.map((option) => option.value)),
+    [apiKeyOptions]
+  );
+  const effectiveApiKeyFilter = apiKeyOptionSet.has(apiKeyFilter) ? apiKeyFilter : ALL_FILTER;
+  const filteredUsage = useMemo(
+    () =>
+      timeFilteredUsage
+        ? filterUsageByApiKey(timeFilteredUsage, effectiveApiKeyFilter, ALL_FILTER)
+        : null,
+    [effectiveApiKeyFilter, timeFilteredUsage]
   );
   const timeRangeReferenceMs = lastRefreshedAt?.getTime() ?? 0;
   const hourWindowHours = getUsageTimeRangeHourWindow(timeRange, timeRangeReferenceMs);
@@ -184,6 +208,19 @@ export function MonitoringCenterPage() {
                 {t(option.labelKey)}
               </Button>
             ))}
+          </div>
+          <div className={styles.headerFilterItem}>
+            <span className={styles.headerFilterLabel}>
+              {t('usage_stats.request_events_filter_api_key')}
+            </span>
+            <Select
+              value={effectiveApiKeyFilter}
+              options={apiKeyOptions}
+              onChange={setApiKeyFilter}
+              className={styles.apiKeySelect}
+              ariaLabel={t('usage_stats.request_events_filter_api_key')}
+              fullWidth={false}
+            />
           </div>
           <Button
             variant="secondary"

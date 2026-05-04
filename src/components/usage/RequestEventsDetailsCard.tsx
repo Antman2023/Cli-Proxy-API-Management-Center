@@ -41,7 +41,6 @@ type RequestEventRow = {
   timestampMs: number;
   timestampLabel: string;
   model: string;
-  apiKeyKey: string;
   apiKey: string;
   sourceKey: string;
   sourceRaw: string;
@@ -168,7 +167,6 @@ export function RequestEventsDetailsCard({
   const deleteUsageRecords = useUsageStatsStore((state) => state.deleteUsageRecords);
 
   const [modelFilter, setModelFilter] = useState(ALL_FILTER);
-  const [apiKeyFilter, setApiKeyFilter] = useState(ALL_FILTER);
   const [sourceFilter, setSourceFilter] = useState(ALL_FILTER);
   const [resultFilter, setResultFilter] = useState(ALL_FILTER);
   const [autoRefreshValue, setAutoRefreshValue] = useState<AutoRefreshValue>(AUTO_REFRESH_OFF);
@@ -346,7 +344,6 @@ export function RequestEventsDetailsCard({
         timestampMs: Number.isNaN(timestampMs) ? 0 : timestampMs,
         timestampLabel: date ? date.toLocaleString(i18n.language) : timestamp || '-',
         model,
-        apiKeyKey: apiKeyRaw ? `api-key:${apiKeyRaw}` : 'api-key:-',
         apiKey: apiKeyRaw ? maskUsageSensitiveValue(apiKeyRaw) : '-',
         sourceKey,
         sourceRaw: sourceRaw || '-',
@@ -437,23 +434,6 @@ export function RequestEventsDetailsCard({
     ];
   }, [rows, t]);
 
-  const apiKeyOptions = useMemo(() => {
-    const optionMap = new Map<string, string>();
-    rows.forEach((row) => {
-      if (!optionMap.has(row.apiKeyKey)) {
-        optionMap.set(row.apiKeyKey, row.apiKey);
-      }
-    });
-
-    return [
-      { value: ALL_FILTER, label: t('usage_stats.filter_all') },
-      ...Array.from(optionMap.entries()).map(([value, label]) => ({
-        value,
-        label,
-      })),
-    ];
-  }, [rows, t]);
-
   const resultOptions = useMemo(
     () => [
       { value: ALL_FILTER, label: t('usage_stats.filter_all') },
@@ -467,10 +447,6 @@ export function RequestEventsDetailsCard({
     () => new Set(modelOptions.map((option) => option.value)),
     [modelOptions]
   );
-  const apiKeyOptionSet = useMemo(
-    () => new Set(apiKeyOptions.map((option) => option.value)),
-    [apiKeyOptions]
-  );
   const sourceOptionSet = useMemo(
     () => new Set(sourceOptions.map((option) => option.value)),
     [sourceOptions]
@@ -481,7 +457,6 @@ export function RequestEventsDetailsCard({
   );
 
   const effectiveModelFilter = modelOptionSet.has(modelFilter) ? modelFilter : ALL_FILTER;
-  const effectiveApiKeyFilter = apiKeyOptionSet.has(apiKeyFilter) ? apiKeyFilter : ALL_FILTER;
   const effectiveSourceFilter = sourceOptionSet.has(sourceFilter) ? sourceFilter : ALL_FILTER;
   const effectiveResultFilter = resultOptionSet.has(resultFilter) ? resultFilter : ALL_FILTER;
 
@@ -490,29 +465,25 @@ export function RequestEventsDetailsCard({
       rows.filter((row) => {
         const modelMatched =
           effectiveModelFilter === ALL_FILTER || row.model === effectiveModelFilter;
-        const apiKeyMatched =
-          effectiveApiKeyFilter === ALL_FILTER || row.apiKeyKey === effectiveApiKeyFilter;
         const sourceMatched =
           effectiveSourceFilter === ALL_FILTER || row.sourceKey === effectiveSourceFilter;
         const resultMatched =
           effectiveResultFilter === ALL_FILTER ||
           (effectiveResultFilter === RESULT_FAILURE_FILTER ? row.failed : !row.failed);
-        return modelMatched && apiKeyMatched && sourceMatched && resultMatched;
+        return modelMatched && sourceMatched && resultMatched;
       }),
-    [effectiveApiKeyFilter, effectiveModelFilter, effectiveResultFilter, effectiveSourceFilter, rows]
+    [effectiveModelFilter, effectiveResultFilter, effectiveSourceFilter, rows]
   );
 
   const renderedRows = useMemo(() => filteredRows.slice(0, MAX_RENDERED_EVENTS), [filteredRows]);
 
   const hasActiveFilters =
     effectiveModelFilter !== ALL_FILTER ||
-    effectiveApiKeyFilter !== ALL_FILTER ||
     effectiveSourceFilter !== ALL_FILTER ||
     effectiveResultFilter !== ALL_FILTER;
 
   const handleClearFilters = () => {
     setModelFilter(ALL_FILTER);
-    setApiKeyFilter(ALL_FILTER);
     setSourceFilter(ALL_FILTER);
     setResultFilter(ALL_FILTER);
   };
@@ -688,19 +659,6 @@ export function RequestEventsDetailsCard({
             onChange={setModelFilter}
             className={styles.requestEventsSelect}
             ariaLabel={t('usage_stats.request_events_filter_model')}
-            fullWidth={false}
-          />
-        </div>
-        <div className={styles.requestEventsFilterItem}>
-          <span className={styles.requestEventsFilterLabel}>
-            {t('usage_stats.request_events_filter_api_key')}
-          </span>
-          <Select
-            value={effectiveApiKeyFilter}
-            options={apiKeyOptions}
-            onChange={setApiKeyFilter}
-            className={styles.requestEventsSelect}
-            ariaLabel={t('usage_stats.request_events_filter_api_key')}
             fullWidth={false}
           />
         </div>
