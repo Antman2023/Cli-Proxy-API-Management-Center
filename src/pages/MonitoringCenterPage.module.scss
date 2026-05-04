@@ -47,19 +47,21 @@
 
 .headerFilterItem {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 180px;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
 }
 
 .headerFilterLabel {
   font-size: 12px;
   color: var(--text-secondary);
   font-weight: 600;
+  line-height: 40px;
+  white-space: nowrap;
 }
 
 .apiKeySelect {
-  min-width: 180px;
+  min-width: 220px;
   max-width: 240px;
 }
 
@@ -728,6 +730,14 @@
   .apiKeySelect {
     width: 100%;
     max-width: none;
+  }
+
+  .headerFilterItem {
+    align-items: stretch;
+  }
+
+  .headerFilterLabel {
+    line-height: 1.2;
   }
 
   .timeRangeButtons :global(.btn.btn-sm) {
