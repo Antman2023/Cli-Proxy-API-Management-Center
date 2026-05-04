@@ -733,11 +733,16 @@
   }
 
   .headerFilterItem {
-    align-items: stretch;
+    align-items: center;
   }
 
   .headerFilterLabel {
-    line-height: 1.2;
+    line-height: 40px;
+  }
+
+  .apiKeySelect {
+    flex: 1 1 0;
+    min-width: 0;
   }
 
   .timeRangeButtons :global(.btn.btn-sm) {
