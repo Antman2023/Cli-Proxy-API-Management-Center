@@ -81,7 +81,7 @@ export function useSparklines({
       return { labels: [], requests: [], tokens: [] };
     }
 
-    if (timeRange === 'today' || timeRange === '7h' || timeRange === '24h') {
+    if (timeRange === 'today' || timeRange === '24h') {
       const hourWindow = getUsageTimeRangeHourWindow(timeRange, nowMs || 0) ?? 24;
       const requestBase = buildHourlySeriesByModel(usage, 'requests', hourWindow);
       const tokenBase = buildHourlySeriesByModel(usage, 'tokens', hourWindow);
@@ -126,7 +126,7 @@ export function useSparklines({
       return { labels: [], data: [] };
     }
 
-    if (timeRange === 'today' || timeRange === '7h' || timeRange === '24h') {
+    if (timeRange === 'today' || timeRange === '24h') {
       const hourWindow = getUsageTimeRangeHourWindow(timeRange, nowMs || 0) ?? 24;
       const costBase = buildHourlyCostSeries(usage, modelPrices, hourWindow);
       return { labels: costBase.labels, data: costBase.data };
