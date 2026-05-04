@@ -42,8 +42,9 @@ import {
 } from '@/utils/usage';
 import {
   DEFAULT_USAGE_TIME_RANGE,
-  HOUR_WINDOW_BY_USAGE_TIME_RANGE,
   USAGE_TIME_RANGE_OPTIONS,
+  getUsageTimeRangeHourWindow,
+  getUsageTimeRangeMinuteWindow,
   isUsageTimeRange
 } from '@/utils/usageTimeRange';
 import styles from './MonitoringCenterPage.module.scss';
@@ -131,15 +132,11 @@ export function MonitoringCenterPage() {
     () => (usage ? filterUsageByTimeRange(usage, timeRange) : null),
     [usage, timeRange]
   );
-  const hourWindowHours =
-    timeRange === 'all' ? undefined : HOUR_WINDOW_BY_USAGE_TIME_RANGE[timeRange];
+  const timeRangeReferenceMs = lastRefreshedAt?.getTime() ?? 0;
+  const hourWindowHours = getUsageTimeRangeHourWindow(timeRange, timeRangeReferenceMs);
   const rateWindowMinutes = useMemo(() => {
-    if (timeRange === '7h') return 7 * 60;
-    if (timeRange === '24h') return 24 * 60;
-    if (timeRange === '7d') return 7 * 24 * 60;
-    if (timeRange === '30d') return 30 * 24 * 60;
-    return 30;
-  }, [timeRange]);
+    return getUsageTimeRangeMinuteWindow(timeRange, timeRangeReferenceMs);
+  }, [timeRange, timeRangeReferenceMs]);
   const nowMs = lastRefreshedAt?.getTime() ?? 0;
 
   const { requestsSparkline, tokensSparkline, rpmSparkline, tpmSparkline, costSparkline } =

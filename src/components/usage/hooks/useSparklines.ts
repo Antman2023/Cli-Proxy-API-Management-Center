@@ -7,6 +7,7 @@ import {
   type ModelPrice,
   type UsageTimeRange
 } from '@/utils/usage';
+import { getUsageTimeRangeHourWindow } from '@/utils/usageTimeRange';
 import type { UsagePayload } from './useUsageData';
 
 export interface SparklineData {
@@ -71,6 +72,7 @@ const trimDailySeriesToRecentDays = (
 export function useSparklines({
   usage,
   loading,
+  nowMs,
   timeRange = '24h',
   modelPrices = {}
 }: UseSparklinesOptions): UseSparklinesReturn {
@@ -79,8 +81,8 @@ export function useSparklines({
       return { labels: [], requests: [], tokens: [] };
     }
 
-    if (timeRange === '7h' || timeRange === '24h') {
-      const hourWindow = timeRange === '7h' ? 7 : 24;
+    if (timeRange === 'today' || timeRange === '7h' || timeRange === '24h') {
+      const hourWindow = getUsageTimeRangeHourWindow(timeRange, nowMs || 0) ?? 24;
       const requestBase = buildHourlySeriesByModel(usage, 'requests', hourWindow);
       const tokenBase = buildHourlySeriesByModel(usage, 'tokens', hourWindow);
       return {
@@ -117,15 +119,15 @@ export function useSparklines({
       requests: requestSeries.data,
       tokens: tokenSeries.data
     };
-  }, [timeRange, usage]);
+  }, [nowMs, timeRange, usage]);
 
   const costSeries = useMemo(() => {
     if (!usage || Object.keys(modelPrices).length === 0) {
       return { labels: [], data: [] };
     }
 
-    if (timeRange === '7h' || timeRange === '24h') {
-      const hourWindow = timeRange === '7h' ? 7 : 24;
+    if (timeRange === 'today' || timeRange === '7h' || timeRange === '24h') {
+      const hourWindow = getUsageTimeRangeHourWindow(timeRange, nowMs || 0) ?? 24;
       const costBase = buildHourlyCostSeries(usage, modelPrices, hourWindow);
       return { labels: costBase.labels, data: costBase.data };
     }
@@ -136,7 +138,7 @@ export function useSparklines({
       return trimDailySeriesToRecentDays(series, timeRange === '7d' ? 7 : 30);
     }
     return series;
-  }, [modelPrices, timeRange, usage]);
+  }, [modelPrices, nowMs, timeRange, usage]);
 
   const buildSparkline = useCallback(
     (

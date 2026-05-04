@@ -153,16 +153,39 @@ export interface ModelStatsSummary {
   latencySampleCount: number;
 }
 
-export type UsageTimeRange = '7h' | '24h' | '7d' | '30d' | 'all';
+export type UsageTimeRange = 'today' | '7h' | '24h' | '7d' | '30d' | 'all';
 
 const TOKENS_PER_PRICE_UNIT = 1_000_000;
 const MODEL_PRICE_STORAGE_KEY = 'cli-proxy-model-prices-v2';
 const USAGE_ENDPOINT_METHOD_REGEX = /^(GET|POST|PUT|PATCH|DELETE|OPTIONS|HEAD)\s+(\S+)/i;
-const USAGE_TIME_RANGE_MS: Record<Exclude<UsageTimeRange, 'all'>, number> = {
+const USAGE_TIME_RANGE_MS: Record<Exclude<UsageTimeRange, 'today' | 'all'>, number> = {
   '7h': 7 * 60 * 60 * 1000,
   '24h': 24 * 60 * 60 * 1000,
   '7d': 7 * 24 * 60 * 60 * 1000,
   '30d': 30 * 24 * 60 * 60 * 1000,
+};
+
+export const getUsageTodayStartMs = (nowMs: number = Date.now()): number => {
+  const today = new Date(nowMs);
+  today.setHours(0, 0, 0, 0);
+  return today.getTime();
+};
+
+export const getUsageTimeRangeStartMs = (
+  range: UsageTimeRange | undefined,
+  nowMs: number = Date.now()
+): number | null => {
+  if (!range || range === 'all') {
+    return null;
+  }
+  if (range === 'today') {
+    return getUsageTodayStartMs(nowMs);
+  }
+  const rangeMs = USAGE_TIME_RANGE_MS[range];
+  if (!Number.isFinite(rangeMs) || rangeMs <= 0) {
+    return null;
+  }
+  return nowMs - rangeMs;
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -449,12 +472,11 @@ export function filterUsageByTimeRange<T>(
     return usageData;
   }
 
-  const rangeMs = USAGE_TIME_RANGE_MS[range];
-  if (!Number.isFinite(rangeMs) || rangeMs <= 0) {
+  const windowStart = getUsageTimeRangeStartMs(range, nowMs);
+  if (windowStart === null) {
     return usageData;
   }
 
-  const windowStart = nowMs - rangeMs;
   const filteredApis: Record<string, unknown> = {};
   const totalSummary = createUsageSummary();
 

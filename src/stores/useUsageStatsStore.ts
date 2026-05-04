@@ -5,6 +5,7 @@ import {
   buildUsageSnapshotFromDetails,
   collectUsageDetailsWithEndpoint,
   computeKeyStatsFromDetails,
+  getUsageTimeRangeStartMs,
   normalizeAuthIndex,
   normalizeUsageData,
   type KeyStats,
@@ -18,13 +19,6 @@ import i18n from '@/i18n';
 export const USAGE_STATS_STALE_TIME_MS = 240_000;
 
 const USAGE_REFRESH_LOOKBACK_MS = 2 * 60 * 60 * 1000;
-const USAGE_RANGE_MS: Record<Exclude<UsageTimeRange, 'all'>, number> = {
-  '7h': 7 * 60 * 60 * 1000,
-  '24h': 24 * 60 * 60 * 1000,
-  '7d': 7 * 24 * 60 * 60 * 1000,
-  '30d': 30 * 24 * 60 * 60 * 1000,
-};
-
 export type LoadUsageStatsOptions = {
   force?: boolean;
   fullRange?: boolean;
@@ -69,10 +63,7 @@ const getErrorMessage = (error: unknown) =>
 const toIsoString = (ms: number): string => new Date(ms).toISOString();
 
 const getRangeStartMs = (timeRange: UsageTimeRange | undefined, nowMs: number): number | null => {
-  if (!timeRange || timeRange === 'all') {
-    return null;
-  }
-  return nowMs - USAGE_RANGE_MS[timeRange];
+  return getUsageTimeRangeStartMs(timeRange, nowMs);
 };
 
 const getTargetStartMs = (
