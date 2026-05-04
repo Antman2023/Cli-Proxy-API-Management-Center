@@ -7,7 +7,10 @@ import {
   type ModelPrice,
   type UsageTimeRange
 } from '@/utils/usage';
-import { getUsageTimeRangeHourWindow } from '@/utils/usageTimeRange';
+import {
+  getUsageTimeRangeHourWindow,
+  getUsageTimeRangeHourWindowEndMs
+} from '@/utils/usageTimeRange';
 import type { UsagePayload } from './useUsageData';
 
 export interface SparklineData {
@@ -81,10 +84,11 @@ export function useSparklines({
       return { labels: [], requests: [], tokens: [] };
     }
 
-    if (timeRange === 'today' || timeRange === '24h') {
+    if (timeRange === 'today' || timeRange === 'yesterday' || timeRange === '24h') {
       const hourWindow = getUsageTimeRangeHourWindow(timeRange, nowMs || 0) ?? 24;
-      const requestBase = buildHourlySeriesByModel(usage, 'requests', hourWindow);
-      const tokenBase = buildHourlySeriesByModel(usage, 'tokens', hourWindow);
+      const hourWindowEndMs = getUsageTimeRangeHourWindowEndMs(timeRange, nowMs || 0);
+      const requestBase = buildHourlySeriesByModel(usage, 'requests', hourWindow, hourWindowEndMs);
+      const tokenBase = buildHourlySeriesByModel(usage, 'tokens', hourWindow, hourWindowEndMs);
       return {
         labels: requestBase.labels,
         requests: sumSeries(requestBase.dataByModel, requestBase.labels.length),
@@ -126,9 +130,10 @@ export function useSparklines({
       return { labels: [], data: [] };
     }
 
-    if (timeRange === 'today' || timeRange === '24h') {
+    if (timeRange === 'today' || timeRange === 'yesterday' || timeRange === '24h') {
       const hourWindow = getUsageTimeRangeHourWindow(timeRange, nowMs || 0) ?? 24;
-      const costBase = buildHourlyCostSeries(usage, modelPrices, hourWindow);
+      const hourWindowEndMs = getUsageTimeRangeHourWindowEndMs(timeRange, nowMs || 0);
+      const costBase = buildHourlyCostSeries(usage, modelPrices, hourWindow, hourWindowEndMs);
       return { labels: costBase.labels, data: costBase.data };
     }
 

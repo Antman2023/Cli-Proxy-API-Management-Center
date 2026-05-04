@@ -37,6 +37,7 @@ export interface MonitorStatCardsProps {
   loading: boolean;
   modelPrices: Record<string, ModelPrice>;
   rateWindowMinutes: number;
+  rateWindowEndMs?: number;
   timeRange: UsageTimeRange;
   sparklines: {
     requests: SparklineBundle | null;
@@ -52,14 +53,15 @@ export function MonitorStatCards({
   loading,
   modelPrices,
   rateWindowMinutes,
+  rateWindowEndMs,
   timeRange,
   sparklines
 }: MonitorStatCardsProps) {
   const { t } = useTranslation();
 
   const rateStats = useMemo(
-    () => calculateRecentPerMinuteRates(rateWindowMinutes, usage),
-    [rateWindowMinutes, usage]
+    () => calculateRecentPerMinuteRates(rateWindowMinutes, usage, rateWindowEndMs),
+    [rateWindowEndMs, rateWindowMinutes, usage]
   );
   const totalCost = useMemo(() => calculateTotalCost(usage, modelPrices), [usage, modelPrices]);
   const hasPrices = Object.keys(modelPrices).length > 0;

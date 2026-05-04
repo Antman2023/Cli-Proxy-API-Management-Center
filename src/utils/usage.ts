@@ -153,12 +153,12 @@ export interface ModelStatsSummary {
   latencySampleCount: number;
 }
 
-export type UsageTimeRange = 'today' | '24h' | '7d' | '30d' | 'all';
+export type UsageTimeRange = 'today' | 'yesterday' | '24h' | '7d' | '30d' | 'all';
 
 const TOKENS_PER_PRICE_UNIT = 1_000_000;
 const MODEL_PRICE_STORAGE_KEY = 'cli-proxy-model-prices-v2';
 const USAGE_ENDPOINT_METHOD_REGEX = /^(GET|POST|PUT|PATCH|DELETE|OPTIONS|HEAD)\s+(\S+)/i;
-const USAGE_TIME_RANGE_MS: Record<Exclude<UsageTimeRange, 'today' | 'all'>, number> = {
+const USAGE_TIME_RANGE_MS: Record<Exclude<UsageTimeRange, 'today' | 'yesterday' | 'all'>, number> = {
   '24h': 24 * 60 * 60 * 1000,
   '7d': 7 * 24 * 60 * 60 * 1000,
   '30d': 30 * 24 * 60 * 60 * 1000,
@@ -168,6 +168,12 @@ export const getUsageTodayStartMs = (nowMs: number = Date.now()): number => {
   const today = new Date(nowMs);
   today.setHours(0, 0, 0, 0);
   return today.getTime();
+};
+
+export const getUsageYesterdayStartMs = (nowMs: number = Date.now()): number => {
+  const yesterday = new Date(getUsageTodayStartMs(nowMs));
+  yesterday.setDate(yesterday.getDate() - 1);
+  return yesterday.getTime();
 };
 
 export const getUsageTimeRangeStartMs = (
@@ -180,11 +186,27 @@ export const getUsageTimeRangeStartMs = (
   if (range === 'today') {
     return getUsageTodayStartMs(nowMs);
   }
+  if (range === 'yesterday') {
+    return getUsageYesterdayStartMs(nowMs);
+  }
   const rangeMs = USAGE_TIME_RANGE_MS[range];
   if (!Number.isFinite(rangeMs) || rangeMs <= 0) {
     return null;
   }
   return nowMs - rangeMs;
+};
+
+export const getUsageTimeRangeEndMs = (
+  range: UsageTimeRange | undefined,
+  nowMs: number = Date.now()
+): number | null => {
+  if (!range || range === 'all') {
+    return null;
+  }
+  if (range === 'yesterday') {
+    return getUsageTodayStartMs(nowMs);
+  }
+  return nowMs;
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -472,7 +494,8 @@ export function filterUsageByTimeRange<T>(
   }
 
   const windowStart = getUsageTimeRangeStartMs(range, nowMs);
-  if (windowStart === null) {
+  const windowEnd = getUsageTimeRangeEndMs(range, nowMs);
+  if (windowStart === null || windowEnd === null) {
     return usageData;
   }
 
@@ -508,7 +531,7 @@ export function filterUsageByTimeRange<T>(
           return;
         }
         const timestamp = parseTimestampMs(detailRecord.timestamp);
-        if (Number.isNaN(timestamp) || timestamp < windowStart || timestamp > nowMs) {
+        if (Number.isNaN(timestamp) || timestamp < windowStart || timestamp >= windowEnd) {
           return;
         }
 
@@ -1049,7 +1072,8 @@ export function calculateTokenBreakdown(usageData: unknown): TokenBreakdown {
  */
 export function calculateRecentPerMinuteRates(
   windowMinutes: number = 30,
-  usageData: unknown
+  usageData: unknown,
+  nowMs: number = Date.now()
 ): RateStats {
   const details = collectUsageDetails(usageData);
   const effectiveWindow = Number.isFinite(windowMinutes) && windowMinutes > 0 ? windowMinutes : 30;
@@ -1058,7 +1082,7 @@ export function calculateRecentPerMinuteRates(
     return { rpm: 0, tpm: 0, windowMinutes: effectiveWindow, requestCount: 0, tokenCount: 0 };
   }
 
-  const now = Date.now();
+  const now = Number.isFinite(nowMs) && nowMs > 0 ? nowMs : Date.now();
   const windowStart = now - effectiveWindow * 60 * 1000;
   let requestCount = 0;
   let tokenCount = 0;
@@ -1439,7 +1463,8 @@ export function formatDayLabel(date: Date): string {
 export function buildHourlySeriesByModel(
   usageData: unknown,
   metric: 'requests' | 'tokens' = 'requests',
-  hourWindow: number = 24
+  hourWindow: number = 24,
+  endMs?: number
 ): {
   labels: string[];
   dataByModel: Map<string, number[]>;
@@ -1450,7 +1475,8 @@ export function buildHourlySeriesByModel(
     Number.isFinite(hourWindow) && hourWindow > 0
       ? Math.min(Math.max(Math.floor(hourWindow), 1), 24 * 31)
       : 24;
-  const now = new Date();
+  const resolvedEndMs = Number.isFinite(endMs) && (endMs ?? 0) > 0 ? endMs ?? Date.now() : Date.now();
+  const now = new Date(resolvedEndMs);
   const currentHour = new Date(now);
   currentHour.setMinutes(0, 0, 0);
 
@@ -1656,11 +1682,11 @@ export function buildChartData(
   period: 'hour' | 'day' = 'day',
   metric: 'requests' | 'tokens' = 'requests',
   selectedModels: string[] = [],
-  options: { hourWindowHours?: number } = {}
+  options: { hourWindowHours?: number; hourWindowEndMs?: number } = {}
 ): ChartData {
   const baseSeries =
     period === 'hour'
-      ? buildHourlySeriesByModel(usageData, metric, options.hourWindowHours)
+      ? buildHourlySeriesByModel(usageData, metric, options.hourWindowHours, options.hourWindowEndMs)
       : buildDailySeriesByModel(usageData, metric);
 
   const { labels, dataByModel } = baseSeries;
@@ -1734,19 +1760,19 @@ export function buildUsageTotalsTrend(
   usageData: unknown,
   modelPrices: Record<string, ModelPrice>,
   period: 'hour' | 'day' = 'day',
-  options: { hourWindowHours?: number } = {}
+  options: { hourWindowHours?: number; hourWindowEndMs?: number } = {}
 ): UsageTotalsTrendData {
   const requestBase =
     period === 'hour'
-      ? buildHourlySeriesByModel(usageData, 'requests', options.hourWindowHours)
+      ? buildHourlySeriesByModel(usageData, 'requests', options.hourWindowHours, options.hourWindowEndMs)
       : buildDailySeriesByModel(usageData, 'requests');
   const tokenBase =
     period === 'hour'
-      ? buildHourlySeriesByModel(usageData, 'tokens', options.hourWindowHours)
+      ? buildHourlySeriesByModel(usageData, 'tokens', options.hourWindowHours, options.hourWindowEndMs)
       : buildDailySeriesByModel(usageData, 'tokens');
   const costBase =
     period === 'hour'
-      ? buildHourlyCostSeries(usageData, modelPrices, options.hourWindowHours)
+      ? buildHourlyCostSeries(usageData, modelPrices, options.hourWindowHours, options.hourWindowEndMs)
       : buildDailyCostSeries(usageData, modelPrices);
 
   return {
@@ -2229,14 +2255,16 @@ export interface CostSeries {
 export function buildHourlyCostSeries(
   usageData: unknown,
   modelPrices: Record<string, ModelPrice>,
-  hourWindow: number = 24
+  hourWindow: number = 24,
+  endMs?: number
 ): CostSeries {
   const hourMs = 60 * 60 * 1000;
   const resolvedHourWindow =
     Number.isFinite(hourWindow) && hourWindow > 0
       ? Math.min(Math.max(Math.floor(hourWindow), 1), 24 * 31)
       : 24;
-  const now = new Date();
+  const resolvedEndMs = Number.isFinite(endMs) && (endMs ?? 0) > 0 ? endMs ?? Date.now() : Date.now();
+  const now = new Date(resolvedEndMs);
   const currentHour = new Date(now);
   currentHour.setMinutes(0, 0, 0);
 

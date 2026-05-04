@@ -44,7 +44,9 @@ import {
   DEFAULT_USAGE_TIME_RANGE,
   USAGE_TIME_RANGE_OPTIONS,
   getUsageTimeRangeHourWindow,
+  getUsageTimeRangeHourWindowEndMs,
   getUsageTimeRangeMinuteWindow,
+  getUsageTimeRangeRateEndMs,
   isUsageTimeRange
 } from '@/utils/usageTimeRange';
 import styles from './MonitoringCenterPage.module.scss';
@@ -134,6 +136,8 @@ export function MonitoringCenterPage() {
   );
   const timeRangeReferenceMs = lastRefreshedAt?.getTime() ?? 0;
   const hourWindowHours = getUsageTimeRangeHourWindow(timeRange, timeRangeReferenceMs);
+  const hourWindowEndMs = getUsageTimeRangeHourWindowEndMs(timeRange, timeRangeReferenceMs);
+  const rateWindowEndMs = getUsageTimeRangeRateEndMs(timeRange, timeRangeReferenceMs);
   const rateWindowMinutes = useMemo(() => {
     return getUsageTimeRangeMinuteWindow(timeRange, timeRangeReferenceMs);
   }, [timeRange, timeRangeReferenceMs]);
@@ -204,6 +208,7 @@ export function MonitoringCenterPage() {
         loading={loading}
         modelPrices={modelPrices}
         rateWindowMinutes={rateWindowMinutes}
+        rateWindowEndMs={rateWindowEndMs}
         timeRange={timeRange}
         sparklines={{
           requests: requestsSparkline,
@@ -221,6 +226,7 @@ export function MonitoringCenterPage() {
           isDark={isDark}
           isMobile={isMobile}
           hourWindowHours={hourWindowHours}
+          hourWindowEndMs={hourWindowEndMs}
           modelPrices={modelPrices}
         />
         <ModelUsageDistributionCard

@@ -951,6 +951,7 @@
     "range_filter": "Time Range",
     "range_all": "All Time",
     "range_today": "Today",
+    "range_yesterday": "Yesterday",
     "range_24h": "Last 24 Hours",
     "range_7d": "Last 7 Days",
     "range_30d": "Last 30 Days",

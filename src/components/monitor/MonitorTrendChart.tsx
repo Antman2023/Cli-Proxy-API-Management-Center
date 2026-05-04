@@ -15,6 +15,7 @@ export interface MonitorTrendChartProps {
   isDark: boolean;
   isMobile: boolean;
   hourWindowHours?: number;
+  hourWindowEndMs?: number;
   modelPrices: Record<string, ModelPrice>;
 }
 
@@ -24,14 +25,15 @@ export function MonitorTrendChart({
   isDark,
   isMobile,
   hourWindowHours,
+  hourWindowEndMs,
   modelPrices
 }: MonitorTrendChartProps) {
   const { t } = useTranslation();
   const [period, setPeriod] = useState<'hour' | 'day'>('day');
 
   const trend = useMemo(
-    () => buildUsageTotalsTrend(usage, modelPrices, period, { hourWindowHours }),
-    [usage, modelPrices, period, hourWindowHours]
+    () => buildUsageTotalsTrend(usage, modelPrices, period, { hourWindowHours, hourWindowEndMs }),
+    [usage, modelPrices, period, hourWindowHours, hourWindowEndMs]
   );
 
   const chartData = useMemo<ChartData<'bar' | 'line'>>(
