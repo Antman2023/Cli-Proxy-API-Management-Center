@@ -1038,6 +1038,7 @@
     "token_breakdown": "Token 類型分布",
     "request_events_title": "請求事件明細",
     "request_events_filter_model": "模型",
+    "request_events_filter_api_key": "API Key",
     "request_events_filter_source": "來源",
     "request_events_filter_auth_index": "驗證索引",
     "request_events_filter_result": "結果",

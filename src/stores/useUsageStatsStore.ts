@@ -192,6 +192,7 @@ const getUsageDetailCacheKey = (detail: UsageDetailWithEndpoint): string => {
 
   return [
     'synthetic',
+    detail.__apiKey ?? '',
     detail.__endpoint,
     detail.__modelName ?? '',
     detail.timestamp,

@@ -80,6 +80,7 @@ export interface UsageDetail {
   thinking_effort?: string;
   failed: boolean;
   __modelName?: string;
+  __apiKey?: string;
   __timestampMs?: number;
 }
 
@@ -338,6 +339,7 @@ const normalizeUsageRecordDetail = (
     ...(thinkingEffort ? { thinking_effort: thinkingEffort } : {}),
     failed: detail.failed === true,
     __modelName: modelName,
+    __apiKey: endpoint,
     __endpoint: endpoint,
     __endpointMethod: endpointMatch?.[1]?.toUpperCase(),
     __endpointPath: endpointMatch?.[2],
@@ -872,7 +874,7 @@ export function collectUsageDetails(usageData: unknown): UsageDetail[] {
     return normalized;
   };
 
-  Object.values(apis).forEach((apiEntry) => {
+  Object.entries(apis).forEach(([apiKey, apiEntry]) => {
     if (!isRecord(apiEntry)) return;
     const modelsRaw = apiEntry.models;
     const models = isRecord(modelsRaw) ? modelsRaw : null;
@@ -911,6 +913,7 @@ export function collectUsageDetails(usageData: unknown): UsageDetail[] {
           ...(thinkingEffort ? { thinking_effort: thinkingEffort } : {}),
           failed: detailRaw.failed === true,
           __modelName: modelName,
+          __apiKey: typeof detailRaw.__apiKey === 'string' ? detailRaw.__apiKey : apiKey,
           __timestampMs: Number.isNaN(timestampMs) ? 0 : timestampMs,
         });
       });
@@ -998,6 +1001,7 @@ export function collectUsageDetailsWithEndpoint(usageData: unknown): UsageDetail
           ...(thinkingEffort ? { thinking_effort: thinkingEffort } : {}),
           failed: detailRaw.failed === true,
           __modelName: modelName,
+          __apiKey: typeof detailRaw.__apiKey === 'string' ? detailRaw.__apiKey : endpoint,
           __endpoint: endpoint,
           __endpointMethod: endpointMethod,
           __endpointPath: endpointPath,
