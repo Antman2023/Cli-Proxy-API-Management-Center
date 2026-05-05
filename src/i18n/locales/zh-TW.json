@@ -1061,6 +1061,8 @@
     "cache_hit": "快取命中",
     "time": "延遲",
     "avg_time": "平均延遲",
+    "avg_first_byte_latency": "首字延遲",
+    "avg_tps": "TPS",
     "latency_unit_hint": "耗時取自後端欄位 {{field}}，按 {{unit}} 解讀後再格式化顯示。",
     "duration_unit_d": "天",
     "duration_unit_h": "時",

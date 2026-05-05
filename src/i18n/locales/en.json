@@ -1053,6 +1053,8 @@
     "cache_hit": "Cache Hit",
     "time": "Latency",
     "avg_time": "Avg Latency",
+    "avg_first_byte_latency": "First-byte latency",
+    "avg_tps": "TPS",
     "latency_unit_hint": "Durations use backend field {{field}} and are interpreted as {{unit}} before formatting.",
     "duration_unit_d": "d",
     "duration_unit_h": "h",

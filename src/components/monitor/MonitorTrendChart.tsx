@@ -4,7 +4,7 @@ import { Chart } from 'react-chartjs-2';
 import { useTranslation } from 'react-i18next';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { buildUsageTotalsTrend, type ModelPrice } from '@/utils/usage';
+import { buildUsageTotalsTrend, formatUsdFixedOne, type ModelPrice } from '@/utils/usage';
 import { getHourChartMinWidth } from '@/utils/usage/chartConfig';
 import type { UsagePayload } from '@/components/usage';
 import styles from '@/pages/MonitoringCenterPage.module.scss';
@@ -18,6 +18,55 @@ export interface MonitorTrendChartProps {
   hourWindowEndMs?: number;
   modelPrices: Record<string, ModelPrice>;
 }
+
+const TOKEN_AXIS_UNITS = [
+  { value: 1_000_000_000_000, suffix: 'T' },
+  { value: 1_000_000_000, suffix: 'B' },
+  { value: 1_000_000, suffix: 'M' },
+  { value: 1_000, suffix: 'K' }
+];
+
+const getTokenAxisUnit = (tickValues: number[]) => {
+  const positive = tickValues
+    .filter((value) => Number.isFinite(value))
+    .map((value) => Math.abs(value))
+    .filter((value) => value > 0)
+    .sort((a, b) => a - b);
+
+  const smallestStep = positive.reduce<number | null>((step, value, index) => {
+    if (index === 0) return step;
+    const diff = value - positive[index - 1];
+    if (diff <= 0) return step;
+    return step === null ? diff : Math.min(step, diff);
+  }, null) ?? positive[0] ?? 0;
+
+  return TOKEN_AXIS_UNITS.find((unit) => smallestStep >= unit.value) ?? null;
+};
+
+const formatTokenAxisValue = (value: number, ticks: { value: number | string }[]) => {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) {
+    return '0';
+  }
+  if (numeric === 0) {
+    return '0';
+  }
+
+  const unit = getTokenAxisUnit(ticks.map((tick) => Number(tick.value)));
+  if (!unit) {
+    return numeric.toLocaleString();
+  }
+
+  const scaled = numeric / unit.value;
+  const absScaled = Math.abs(scaled);
+  const fractionDigits = Number.isInteger(scaled) ? 0 : absScaled >= 10 ? 1 : 2;
+  return `${scaled.toLocaleString(undefined, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: fractionDigits
+  })}${unit.suffix}`;
+};
+
+const formatCostValue = (value: number) => formatUsdFixedOne(value);
 
 export function MonitorTrendChart({
   usage,
@@ -72,17 +121,6 @@ export function MonitorTrendChart({
     }),
     [isMobile, period, t, trend.costSeries, trend.labels, trend.tokenSeries]
   );
-
-  const formatCostValue = (value: number) => {
-    const numeric = Number(value);
-    if (!Number.isFinite(numeric)) {
-      return '$0.0';
-    }
-    return `$${numeric.toLocaleString(undefined, {
-      minimumFractionDigits: 1,
-      maximumFractionDigits: 1
-    })}`;
-  };
 
   const chartOptions = useMemo<ChartOptions<'bar'>>(() => {
     const gridColor = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(17, 24, 39, 0.06)';
@@ -180,7 +218,8 @@ export function MonitorTrendChart({
           },
           ticks: {
             color: tickColor,
-            font: { size: tickFontSize }
+            font: { size: tickFontSize },
+            callback: (value, _index, ticks) => formatTokenAxisValue(Number(value), ticks)
           }
         },
         yCost: {
