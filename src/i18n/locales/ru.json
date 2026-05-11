@@ -115,8 +115,6 @@
     "auth_files": "Файлы аутентификации",
     "oauth": "OAuth вход",
     "quota_management": "Управление квотами",
-    "monitoring_center": "Центр мониторинга",
-    "credential_center": "Центр ключей",
     "config_management": "Панель конфигурации",
     "logs": "Просмотр логов",
     "system_info": "Информация системы"

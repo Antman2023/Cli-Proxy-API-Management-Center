@@ -115,8 +115,6 @@
     "auth_files": "Auth Files",
     "oauth": "OAuth Login",
     "quota_management": "Quota Management",
-    "monitoring_center": "Monitoring Center",
-    "credential_center": "Credential Center",
     "config_management": "Config Panel",
     "logs": "Logs Viewer",
     "system_info": "Management Center Info"
