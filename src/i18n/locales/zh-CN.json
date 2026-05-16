@@ -115,8 +115,6 @@
     "auth_files": "认证文件",
     "oauth": "OAuth 登录",
     "quota_management": "配额管理",
-    "monitoring_center": "监控中心",
-    "credential_center": "凭证中心",
     "config_management": "配置面板",
     "logs": "日志查看",
     "system_info": "中心信息"
@@ -1053,6 +1051,8 @@
     "cache_hit": "缓存命中",
     "time": "延迟",
     "avg_time": "平均延迟",
+    "avg_first_byte_latency": "首字延迟",
+    "avg_tps": "TPS",
     "latency_unit_hint": "耗时取自后端字段 {{field}}，按 {{unit}} 解释后再格式化显示。",
     "duration_unit_d": "天",
     "duration_unit_h": "时",

@@ -115,8 +115,6 @@
     "auth_files": "Auth Files",
     "oauth": "OAuth Login",
     "quota_management": "Quota Management",
-    "monitoring_center": "Monitoring Center",
-    "credential_center": "Credential Center",
     "config_management": "Config Panel",
     "logs": "Logs Viewer",
     "system_info": "Management Center Info"
@@ -1053,6 +1051,8 @@
     "cache_hit": "Cache Hit",
     "time": "Latency",
     "avg_time": "Avg Latency",
+    "avg_first_byte_latency": "First-byte latency",
+    "avg_tps": "TPS",
     "latency_unit_hint": "Durations use backend field {{field}} and are interpreted as {{unit}} before formatting.",
     "duration_unit_d": "d",
     "duration_unit_h": "h",

@@ -156,7 +156,11 @@ export interface ModelStatsSummary {
   tokens: number;
   cost: number;
   averageLatencyMs: number | null;
+  averageFirstByteLatencyMs: number | null;
+  averageTps: number | null;
   latencySampleCount: number;
+  firstByteLatencySampleCount: number;
+  tpsSampleCount: number;
 }
 
 export type UsageTimeRange = 'today' | 'yesterday' | '24h' | '7d' | '30d' | 'all';
@@ -966,12 +970,18 @@ export function formatCompactNumber(value: number): string {
   }
   const abs = Math.abs(num);
   if (abs >= 1_000_000) {
-    return `${(num / 1_000_000).toFixed(1)}M`;
+    return `${(num / 1_000_000).toLocaleString(undefined, {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    })}M`;
   }
   if (abs >= 1_000) {
-    return `${(num / 1_000).toFixed(1)}K`;
+    return `${(num / 1_000).toLocaleString(undefined, {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    })}K`;
   }
-  return abs >= 1 ? num.toFixed(0) : num.toFixed(2);
+  return abs >= 1 ? Math.round(num).toLocaleString() : num.toFixed(2);
 }
 
 /**
@@ -982,12 +992,26 @@ export function formatUsd(value: number): string {
   if (!Number.isFinite(num)) {
     return '$0.00';
   }
-  const fixed = num.toFixed(2);
-  const parts = Number(fixed).toLocaleString(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+
+  const abs = Math.abs(num);
+  const fractionDigits = abs >= 1000 ? 0 : abs >= 10 ? 1 : 2;
+  const parts = num.toLocaleString(undefined, {
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
   });
   return `$${parts}`;
+}
+
+export function formatUsdFixedOne(value: number): string {
+  const num = Number(value);
+  if (!Number.isFinite(num)) {
+    return '$0.0';
+  }
+
+  return `$${num.toLocaleString(undefined, {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  })}`;
 }
 
 const usageDetailsCache = new WeakMap<object, UsageDetail[]>();
@@ -1509,6 +1533,9 @@ export function getModelStats(
       tokens: number;
       cost: number;
       latency: LatencyAccumulator;
+      firstByteLatency: LatencyAccumulator;
+      totalTps: number;
+      tpsSampleCount: number;
     }
   >();
 
@@ -1527,6 +1554,9 @@ export function getModelStats(
         tokens: 0,
         cost: 0,
         latency: createLatencyAccumulator(),
+        firstByteLatency: createLatencyAccumulator(),
+        totalTps: 0,
+        tpsSampleCount: 0,
       };
       existing.requests += Number(modelData.total_requests) || 0;
       existing.tokens += Number(modelData.total_tokens) || 0;
@@ -1546,6 +1576,12 @@ export function getModelStats(
         details.forEach((detail) => {
           const detailRecord = isRecord(detail) ? detail : null;
           const latencyMs = extractLatencyMs(detailRecord);
+          const firstByteLatencyMs = extractFirstByteLatencyMs(detailRecord);
+          const generationMs = extractGenerationMs(detailRecord);
+          const tokens = isRecord(detailRecord?.tokens) ? detailRecord.tokens : null;
+          const outputTokensRaw = Number(tokens?.output_tokens);
+          const outputTokens = Number.isFinite(outputTokensRaw) ? Math.max(outputTokensRaw, 0) : 0;
+          const tps = generationMs && generationMs > 0 ? outputTokens / (generationMs / 1000) : null;
           if (!hasExplicitCounts) {
             if (detailRecord?.failed === true) {
               existing.failureCount += 1;
@@ -1555,6 +1591,14 @@ export function getModelStats(
           }
 
           addLatencySample(existing.latency, latencyMs);
+          addLatencySample(
+            existing.firstByteLatency,
+            firstByteLatencyMs !== null && firstByteLatencyMs > 0 ? firstByteLatencyMs : null
+          );
+          if (tps !== null && Number.isFinite(tps) && tps >= 0) {
+            existing.totalTps += tps;
+            existing.tpsSampleCount += 1;
+          }
 
           if (price && detailRecord) {
             existing.cost += calculateCost(
@@ -1571,6 +1615,7 @@ export function getModelStats(
   return Array.from(modelMap.entries())
     .map(([model, stats]) => {
       const latencyStats = finalizeLatencyStats(stats.latency);
+      const firstByteLatencyStats = finalizeLatencyStats(stats.firstByteLatency);
       return {
         model,
         requests: stats.requests,
@@ -1579,7 +1624,11 @@ export function getModelStats(
         tokens: stats.tokens,
         cost: stats.cost,
         averageLatencyMs: latencyStats.averageMs,
+        averageFirstByteLatencyMs: firstByteLatencyStats.averageMs,
+        averageTps: stats.tpsSampleCount > 0 ? stats.totalTps / stats.tpsSampleCount : null,
         latencySampleCount: latencyStats.sampleCount,
+        firstByteLatencySampleCount: firstByteLatencyStats.sampleCount,
+        tpsSampleCount: stats.tpsSampleCount,
       };
     })
     .sort((a, b) => b.requests - a.requests);

@@ -4,7 +4,7 @@ import { Card } from '@/components/ui/Card';
 import {
   formatCompactNumber,
   formatDurationMs,
-  formatUsd,
+  formatUsdFixedOne,
   type ModelStatsSummary,
 } from '@/utils/usage';
 import styles from '@/pages/UsagePage.module.scss';
@@ -23,7 +23,8 @@ type SortKey =
   | 'tokens'
   | 'cost'
   | 'successRate'
-  | 'averageLatencyMs';
+  | 'averageFirstByteLatencyMs'
+  | 'averageTps';
 type SortDir = 'asc' | 'desc';
 
 interface ModelStatWithRate extends ModelStat {
@@ -109,14 +110,24 @@ export function ModelStatsCard({ modelStats, loading, hasPrices }: ModelStatsCar
                         {arrow('tokens')}
                       </button>
                     </th>
-                    <th className={styles.sortableHeader} aria-sort={ariaSort('averageLatencyMs')}>
+                    <th className={styles.sortableHeader} aria-sort={ariaSort('averageFirstByteLatencyMs')}>
                       <button
                         type="button"
                         className={styles.sortHeaderButton}
-                        onClick={() => handleSort('averageLatencyMs')}
+                        onClick={() => handleSort('averageFirstByteLatencyMs')}
                       >
-                        {t('usage_stats.avg_time')}
-                        {arrow('averageLatencyMs')}
+                        {t('usage_stats.avg_first_byte_latency')}
+                        {arrow('averageFirstByteLatencyMs')}
+                      </button>
+                    </th>
+                    <th className={styles.sortableHeader} aria-sort={ariaSort('averageTps')}>
+                      <button
+                        type="button"
+                        className={styles.sortHeaderButton}
+                        onClick={() => handleSort('averageTps')}
+                      >
+                        {t('usage_stats.avg_tps')}
+                        {arrow('averageTps')}
                       </button>
                     </th>
                     <th className={styles.sortableHeader} aria-sort={ariaSort('successRate')}>
@@ -164,8 +175,9 @@ export function ModelStatsCard({ modelStats, loading, hasPrices }: ModelStatsCar
                       </td>
                       <td>{formatCompactNumber(stat.tokens)}</td>
                       <td className={styles.durationCell}>
-                        {formatDurationMs(stat.averageLatencyMs)}
+                        {formatDurationMs(stat.averageFirstByteLatencyMs)}
                       </td>
+                      <td>{stat.averageTps !== null ? stat.averageTps.toFixed(2) : '--'}</td>
                       <td>
                         <span
                           className={
@@ -179,7 +191,7 @@ export function ModelStatsCard({ modelStats, loading, hasPrices }: ModelStatsCar
                           {stat.successRate.toFixed(1)}%
                         </span>
                       </td>
-                      {hasPrices && <td>{stat.cost > 0 ? formatUsd(stat.cost) : '--'}</td>}
+                      {hasPrices && <td>{stat.cost > 0 ? formatUsdFixedOne(stat.cost) : '--'}</td>}
                     </tr>
                   ))}
                 </tbody>

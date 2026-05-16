@@ -115,8 +115,6 @@
     "auth_files": "驗證檔案",
     "oauth": "OAuth 登入",
     "quota_management": "配額管理",
-    "monitoring_center": "監控中心",
-    "credential_center": "憑證中心",
     "config_management": "設定面板",
     "logs": "記錄檢視",
     "system_info": "中心資訊"
@@ -1061,6 +1059,8 @@
     "cache_hit": "快取命中",
     "time": "延遲",
     "avg_time": "平均延遲",
+    "avg_first_byte_latency": "首字延遲",
+    "avg_tps": "TPS",
     "latency_unit_hint": "耗時取自後端欄位 {{field}}，按 {{unit}} 解讀後再格式化顯示。",
     "duration_unit_d": "天",
     "duration_unit_h": "時",
