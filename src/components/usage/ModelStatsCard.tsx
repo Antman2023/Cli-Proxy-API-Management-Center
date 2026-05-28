@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card } from '@/components/ui/Card';
 import {
@@ -15,6 +15,8 @@ export interface ModelStatsCardProps {
   modelStats: ModelStat[];
   loading: boolean;
   hasPrices: boolean;
+  title?: ReactNode;
+  extra?: ReactNode;
 }
 
 type SortKey =
@@ -31,7 +33,7 @@ interface ModelStatWithRate extends ModelStat {
   successRate: number;
 }
 
-export function ModelStatsCard({ modelStats, loading, hasPrices }: ModelStatsCardProps) {
+export function ModelStatsCard({ modelStats, loading, hasPrices, title, extra }: ModelStatsCardProps) {
   const { t } = useTranslation();
   const [sortKey, setSortKey] = useState<SortKey>('requests');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
@@ -70,7 +72,7 @@ export function ModelStatsCard({ modelStats, loading, hasPrices }: ModelStatsCar
   const ariaSort = (key: SortKey): 'none' | 'ascending' | 'descending' =>
     sortKey === key ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none';
   return (
-    <Card title={t('usage_stats.models')} className={styles.detailsFixedCard}>
+    <Card title={title ?? t('usage_stats.models')} extra={extra} className={styles.detailsFixedCard}>
       {loading ? (
         <div className={styles.hint}>{t('common.loading')}</div>
       ) : sorted.length > 0 ? (

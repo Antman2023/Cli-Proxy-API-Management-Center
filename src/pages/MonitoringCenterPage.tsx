@@ -35,6 +35,7 @@ import type { ModelStat } from '@/components/usage/ModelStatsCard';
 import { MonitorStatCards } from '@/components/monitor/MonitorStatCards';
 import { MonitorTrendChart } from '@/components/monitor/MonitorTrendChart';
 import { ModelUsageDistributionCard } from '@/components/monitor/ModelUsageDistributionCard';
+import { MonitorApiKeyStatsCard } from '@/components/monitor/MonitorApiKeyStatsCard';
 import {
   filterUsageByApiKey,
   filterUsageByTimeRange,
@@ -92,6 +93,7 @@ export function MonitoringCenterPage() {
   const config = useConfigStore((state) => state.config);
   const [timeRange, setTimeRange] = useState<UsageTimeRange>(loadTimeRange);
   const [apiKeyFilter, setApiKeyFilter] = useState(ALL_FILTER);
+  const [usageStatsDimension, setUsageStatsDimension] = useState<'model' | 'apiKey'>('model');
 
   const {
     usage,
@@ -182,6 +184,25 @@ export function MonitoringCenterPage() {
   const handleTimeRangeChange = useCallback((range: UsageTimeRange) => {
     setTimeRange(range);
   }, []);
+
+  const usageStatsToggle = (
+    <div className={styles.periodButtons}>
+      <Button
+        variant={usageStatsDimension === 'model' ? 'primary' : 'secondary'}
+        size="sm"
+        onClick={() => setUsageStatsDimension('model')}
+      >
+        {t('monitoring_center.usage_stats_by_model')}
+      </Button>
+      <Button
+        variant={usageStatsDimension === 'apiKey' ? 'primary' : 'secondary'}
+        size="sm"
+        onClick={() => setUsageStatsDimension('apiKey')}
+      >
+        {t('monitoring_center.usage_stats_by_api_key')}
+      </Button>
+    </div>
+  );
 
   return (
     <div className={styles.container}>
@@ -274,7 +295,23 @@ export function MonitoringCenterPage() {
       </div>
 
       <div className={styles.middleGrid}>
-        <ModelStatsCard modelStats={modelStats} loading={loading} hasPrices={true} />
+        {usageStatsDimension === 'model' ? (
+          <ModelStatsCard
+            modelStats={modelStats}
+            loading={loading}
+            hasPrices={true}
+            title={t('monitoring_center.usage_stats_title')}
+            extra={usageStatsToggle}
+          />
+        ) : (
+          <MonitorApiKeyStatsCard
+            usage={filteredUsage as UsagePayload | null}
+            loading={loading}
+            modelPrices={modelPrices}
+            title={t('monitoring_center.usage_stats_title')}
+            extra={usageStatsToggle}
+          />
+        )}
         <PriceSettingsCard
           modelNames={modelNames}
           modelPrices={modelPrices}

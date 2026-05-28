@@ -54,6 +54,14 @@ jobs:
 
           git restore --source="$before_sha" --staged --worktree -- README.md
 
+          if git ls-files --error-unmatch CLAUDE.md >/dev/null 2>&1; then
+            if git cat-file -e "$before_sha:CLAUDE.md" 2>/dev/null; then
+              git restore --source="$before_sha" --staged --worktree -- CLAUDE.md
+            else
+              git rm -f --ignore-unmatch CLAUDE.md
+            fi
+          fi
+
           remaining_conflicts="$(git diff --name-only --diff-filter=U)"
           if [ -n "$remaining_conflicts" ]; then
             echo "Merge conflicts require manual resolution:"

@@ -640,6 +640,11 @@
   white-space: nowrap;
 }
 
+.durationCell {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 .statSuccess {
   color: var(--success-color);
 }

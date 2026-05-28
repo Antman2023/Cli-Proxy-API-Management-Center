@@ -6,6 +6,10 @@ export const forkTranslations = {
       "monitoring_center": "监控中心",
       "credential_center": "凭证中心"
     },
+    "nav_meta": {
+      "monitoring_center": "请求与用量洞察",
+      "credential_center": "凭证配额与队列"
+    },
     "usage_stats": {
       "title": "使用统计",
       "total_requests": "总请求数",
@@ -158,6 +162,10 @@ export const forkTranslations = {
     },
     "monitoring_center": {
       "title": "监控中心",
+      "usage_stats_title": "用量统计",
+      "usage_stats_by_model": "模型",
+      "usage_stats_by_api_key": "API密钥",
+      "api_key_stat_name": "API密钥",
       "combined_trend_title": "花费与 Token 趋势",
       "model_distribution_title": "模型用量分布",
       "metric_requests": "按请求统计",
@@ -255,6 +263,10 @@ export const forkTranslations = {
     "nav": {
       "monitoring_center": "監控中心",
       "credential_center": "憑證中心"
+    },
+    "nav_meta": {
+      "monitoring_center": "請求與用量洞察",
+      "credential_center": "憑證配額與佇列"
     },
     "usage_stats": {
       "title": "使用統計",
@@ -380,6 +392,10 @@ export const forkTranslations = {
     },
     "monitoring_center": {
       "title": "監控中心",
+      "usage_stats_title": "用量統計",
+      "usage_stats_by_model": "模型",
+      "usage_stats_by_api_key": "API 金鑰",
+      "api_key_stat_name": "API 金鑰",
       "combined_trend_title": "花費與 Token 趨勢",
       "model_distribution_title": "模型用量分布",
       "metric_requests": "按請求統計",
@@ -477,6 +493,10 @@ export const forkTranslations = {
     "nav": {
       "monitoring_center": "Monitoring Center",
       "credential_center": "Credential Center"
+    },
+    "nav_meta": {
+      "monitoring_center": "Request and usage insights",
+      "credential_center": "Credential quotas and queues"
     },
     "usage_stats": {
       "title": "Usage Statistics",
@@ -630,6 +650,10 @@ export const forkTranslations = {
     },
     "monitoring_center": {
       "title": "Monitoring Center",
+      "usage_stats_title": "Usage Statistics",
+      "usage_stats_by_model": "Model",
+      "usage_stats_by_api_key": "API Key",
+      "api_key_stat_name": "API Key",
       "combined_trend_title": "Cost and Token Trends",
       "model_distribution_title": "Model Usage Distribution",
       "metric_requests": "By Requests",
@@ -727,6 +751,10 @@ export const forkTranslations = {
     "nav": {
       "monitoring_center": "Центр мониторинга",
       "credential_center": "Центр ключей"
+    },
+    "nav_meta": {
+      "monitoring_center": "Запросы и использование",
+      "credential_center": "Квоты и очереди ключей"
     },
     "usage_stats": {
       "title": "Статистика использования",
@@ -880,6 +908,10 @@ export const forkTranslations = {
     },
     "monitoring_center": {
       "title": "Центр мониторинга",
+      "usage_stats_title": "Статистика использования",
+      "usage_stats_by_model": "Модель",
+      "usage_stats_by_api_key": "API-ключ",
+      "api_key_stat_name": "API-ключ",
       "combined_trend_title": "Тренд стоимости и токенов",
       "model_distribution_title": "Распределение использования моделей",
       "metric_requests": "По запросам",
