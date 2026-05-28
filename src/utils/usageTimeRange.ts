@@ -7,9 +7,9 @@ import {
 export const DEFAULT_USAGE_TIME_RANGE: UsageTimeRange = '24h';
 
 export const USAGE_TIME_RANGE_OPTIONS: ReadonlyArray<{ value: UsageTimeRange; labelKey: string }> = [
-  { value: '24h', labelKey: 'usage_stats.range_24h' },
-  { value: 'today', labelKey: 'usage_stats.range_today' },
   { value: 'yesterday', labelKey: 'usage_stats.range_yesterday' },
+  { value: 'today', labelKey: 'usage_stats.range_today' },
+  { value: '24h', labelKey: 'usage_stats.range_24h' },
   { value: '7d', labelKey: 'usage_stats.range_7d' },
   { value: '30d', labelKey: 'usage_stats.range_30d' },
   { value: 'all', labelKey: 'usage_stats.range_all' }
